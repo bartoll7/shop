@@ -1,0 +1,44 @@
+plugins {
+    java
+    id("org.springframework.boot") version "4.0.0"
+    id("io.spring.dependency-management") version "1.1.7"
+}
+
+group = "com.example"
+version = "0.0.1-SNAPSHOT"
+description = "DDD shop — learning project"
+
+java {
+    // Toolchain: Gradle will locate (or download) a JDK 25 to compile and run,
+    // independently of the JDK running Gradle itself.
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // Web layer — we will keep it OUT of the domain (weeks 9-10).
+    implementation("org.springframework.boot:spring-boot-starter-web")
+
+    // Bean validation — useful at the application/infrastructure edges.
+    implementation("org.springframework.boot:spring-boot-starter-validation")
+
+    // Spring Data JPA — we will wrap it behind Repository abstractions (week 7),
+    // NOT let it leak into the domain.
+    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+
+    // In-memory DB so the project runs with zero external setup.
+    runtimeOnly("com.h2database:h2")
+
+    // Tests
+    testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+}
+
+tasks.withType<Test> {
+    useJUnitPlatform()
+}
