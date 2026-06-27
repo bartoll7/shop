@@ -29,11 +29,14 @@ class PaymentFlowIntegrationTest {
     @Test
     void payingThroughTheProviderMarksTheOrderAsPaidEndToEnd() {
         // 1. Place an order.
-        OrderId orderId = orders.placeOrder(new PlaceOrderCommand(List.of(
-            new PlaceOrderCommand.Item(
+        OrderId orderId = orders.placeOrder(new PlaceOrderCommand(
+            30,
+            com.example.shop.shared.Country.of("PL"),
+            List.of(new PlaceOrderCommand.Item(
                 UUID.randomUUID().toString(),
-                "Wino X", Money.of("50.00", "PLN"), 2)
-        )));
+                "Wino X", Money.of("50.00", "PLN"), 2,
+                com.example.shop.agerestriction.domain.AgeRestriction.none()))
+        ));
 
         // 2. Initiate payment — the fake provider will webhook back, the ACL translates,
         //    payment confirms, PaymentReceived fires, ordering marks the order paid.

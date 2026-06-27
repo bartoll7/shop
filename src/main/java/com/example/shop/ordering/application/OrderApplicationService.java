@@ -1,5 +1,6 @@
 package com.example.shop.ordering.application;
 
+import com.example.shop.agerestriction.domain.PurchaseEligibility;
 import com.example.shop.ordering.domain.Order;
 import com.example.shop.ordering.domain.OrderId;
 import com.example.shop.ordering.domain.OrderRepository;
@@ -15,27 +16,43 @@ import java.util.List;
 /**
  * OrderApplicationService — orchestrates order use cases.
  *
- * <p>It coordinates; it does NOT contain business rules (those live in the domain).
- * Per use case it: loads/creates aggregates via the repository PORT, invokes domain
- * behavior, saves, then publishes the recorded domain events — AFTER the save, so
- * events only escape once the change is durable.
- *
- * <p>It depends on PORTS (OrderRepository, DomainEventPublisher), never on concrete
- * infrastructure. Spring wires the adapters in at runtime.
+ * <p>It coordinates; it does NOT contain business rules. For placeOrder it now also
+ * enforces the age-restriction rule by invoking the PurchaseEligibility domain service
+ * (Customer-Supplier relationship: ordering consumes the age-restriction context).
+ * The check happens BEFORE the aggregate is built and saved, so a disallowed order is
+ * rejected without any persistence or events.
  */
 @Service
 public class OrderApplicationService {
 
     private final OrderRepository orders;
     private final DomainEventPublisher events;
+    private final PurchaseEligibility purchaseEligibility;
 
-    public OrderApplicationService(OrderRepository orders, DomainEventPublisher events) {
+    public OrderApplicationService(OrderRepository orders,
+        DomainEventPublisher events,
+        PurchaseEligibility purchaseEligibility) {
         this.orders = orders;
         this.events = events;
+        this.purchaseEligibility = purchaseEligibility;
     }
 
     @Transactional
     public OrderId placeOrder(PlaceOrderCommand command) {
+        // Enforce age restriction across all items before doing anything else.
+        for (PlaceOrderCommand.Item item : command.items()) {
+            boolean allowed = purchaseEligibility.isAllowed(
+                command.buyerAge(),
+                item.ageRestriction(),
+                command.shippingCountry());
+            if (!allowed) {
+                throw new AgeRestrictionViolation(
+                    "Buyer (age %d) may not purchase '%s' shipped to %s"
+                        .formatted(command.buyerAge(), item.productName(),
+                                   command.shippingCountry().code()));
+            }
+        }
+
         Order order = Order.place();
         for (PlaceOrderCommand.Item item : command.items()) {
             order.addLine(

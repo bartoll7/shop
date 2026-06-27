@@ -31,11 +31,14 @@ class OrderApplicationServiceTest {
 
     @Test
     void placingThenPayingAnOrderPersistsItAndPublishesOrderPaid() {
-        var command = new PlaceOrderCommand(List.of(
-            new PlaceOrderCommand.Item(
+        var command = new PlaceOrderCommand(
+            30,
+            com.example.shop.shared.Country.of("PL"),
+            List.of(new PlaceOrderCommand.Item(
                 UUID.randomUUID().toString(),
-                "Wino X", Money.of("50.00", "PLN"), 2)
-        ));
+                "Wino X", Money.of("50.00", "PLN"), 2,
+                com.example.shop.agerestriction.domain.AgeRestriction.none()))
+        );
 
         OrderId id = service.placeOrder(command);
         service.payOrder(id);
