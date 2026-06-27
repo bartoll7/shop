@@ -5,7 +5,7 @@ Sklep internetowy budowany krok po kroku jako praktyczne wprowadzenie do **Domai
 ## Stack
 
 - **Java 25** (przez Gradle toolchain)
-- **Gradle 9** (wrapper w repo)
+- **Gradle 9** (wrapper w repo, build w Groovy DSL — `build.gradle`)
 - **Spring Boot 4.0**
 - H2 in-memory (zero zewnętrznej konfiguracji)
 - Repozytoria zaimplementowane in-memory (świadoma decyzja dydaktyczna — patrz niżej)
@@ -36,6 +36,7 @@ Projekt przechodzi przez pełną drogę od pytania "po co DDD" do działającego
 | 11 | Bounded Contexts | Context Map, wzorce relacji (Shared Kernel, Customer-Supplier, ACL) |
 | 12 | Synteza i pomost dalej | Najczęstsze błędy, kiedy NIE używać DDD, pomosty do CQRS/ES/mikroserwisów |
 | (rozszerzenie) | Payment + Gateway + ACL | Pełny kontekst płatności z Anticorruption Layer |
+| (rozszerzenie) | Egzekwowanie reguły wieku | `PurchaseEligibility` wpięte w `placeOrder` jako reguła zapisu |
 
 ---
 
@@ -178,6 +179,38 @@ sequenceDiagram
 
 ---
 
+## Egzekwowanie reguły wieku przy składaniu zamówienia
+
+`PurchaseEligibility` to Domain Service z **przecięcia agregatów**: reguła zależy od wieku kupującego, ograniczenia produktu i jurysdykcji (kraju dostawy) — żaden pojedynczy agregat nie jest jej właścicielem. Dlatego nie mieszka w encji `Order`, lecz jest wołana w **Application Service**, na wejściu `placeOrder`, jako **reguła zapisu** — zanim agregat powstanie i zostanie zapisany.
+
+```mermaid
+sequenceDiagram
+    participant C as Klient
+    participant AS as OrderApplicationService
+    participant DS as PurchaseEligibility (Domain Service)
+    participant ORD as Order (agregat)
+    participant REPO as OrderRepository
+
+    C->>AS: placeOrder(command)
+    loop dla każdej pozycji
+        AS->>DS: isAllowed(buyerAge, ageRestriction, shippingCountry)
+        DS-->>AS: true / false
+    end
+    alt którakolwiek pozycja niedozwolona
+        AS-->>C: AgeRestrictionViolation (nic nie zapisane)
+    else wszystkie dozwolone
+        AS->>ORD: Order.place() + addLine(...)
+        AS->>REPO: save(order)
+        AS-->>C: OrderId
+    end
+```
+
+**Kluczowe właściwości:** sprawdzenie pada **przed** zapisem — odrzucone zamówienie nie zostawia żadnego śladu (brak zapisu, brak zdarzeń). Domain Service pozostaje **bezstanowy** (wszystko dostaje w argumentach), a `Order` nie zna wieku klienta ani jurysdykcji — dane zbiera i podaje warstwa aplikacji. To relacja **Customer-Supplier**: `ordering` konsumuje regułę z kontekstu `agerestriction`.
+
+> Uproszczenie dydaktyczne: wiek kupującego i `AgeRestriction` produktów przychodzą tu w `PlaceOrderCommand`. W pełnej wersji Application Service dociągałby je z repozytoriów — wiek z kontekstu Customer, ograniczenia z katalogu po `ProductId`.
+
+---
+
 ## Cykl życia agregatów
 
 Agregaty bronią swoich invariantów przez kontrolowane przejścia stanu. Stan zmienia się tylko przez metody o nazwach z języka biznesu — nigdy przez settery.
@@ -212,6 +245,8 @@ com.example.shop
 │   │                          Quantity, OrderStatus, OrderRepository (port),
 │   │                          OrderPlaced, OrderPaid (zdarzenia)
 │   ├── application/           OrderApplicationService, PlaceOrderCommand,
+│   │                          AgeRestrictionViolation, OrderingBeans (rejestracja
+│   │                          domain service jako beanu, bez adnotacji w domenie),
 │   │                          MarkOrderPaidOnPaymentReceived (listener)
 │   └── infrastructure/        InMemoryOrderRepository, SpringDomainEventPublisher
 │
@@ -246,6 +281,8 @@ Decyzje podjęte w trakcie kursu, warte zapamiętania:
 - **`OrderLine` trzyma `ProductId` (referencja przez ID) + snapshot ceny i nazwy**, nie cały obiekt `Product`. Chroni zamówienie przed zmianami w katalogu: "cena zakupu" to inne pojęcie niż "cena katalogowa".
 - **Agregaty są małe.** `Customer`, `Product`, `StockItem`, `Payment` to osobne agregaty/konteksty, połączone referencją przez ID i spójnością ostateczną przez zdarzenia. Jedna transakcja zmienia jeden agregat.
 - **Płatność to osobny kontekst, nie część `ordering`** — ma własny cykl życia i własny język, a obcego dostawcę izoluje ACL.
+- **Reguła wieku jest egzekwowana w Application Service, na wejściu `placeOrder`** (przed zapisem agregatu), bo to Domain Service z przecięcia agregatów — nie należy do encji `Order`, która nie zna wieku klienta ani jurysdykcji.
+- **Domain Service rejestrujemy jako bean przez `@Configuration`/`@Bean`** (`OrderingBeans`), a nie przez `@Service` na samej klasie — dzięki temu `PurchaseEligibility` pozostaje wolny od adnotacji frameworka, zgodnie z czystością domeny.
 - **Value Objecty są niezmienne i bronią swoich invariantów** (np. `Money` nie pozwala mieszać walut — to błąd w domenie, nie cicha konwersja).
 
 ---
@@ -272,7 +309,7 @@ Projekt jest fundamentem pod kolejne kroki:
 ./gradlew test
 ```
 
-41 testów: od jednostkowych testów Value Objectów i agregatów (bez zależności, błyskawiczne) po pełny test integracyjny przepływu płatności przez kontekst Spring (`PaymentFlowIntegrationTest`), który przechodzi przez cztery konteksty i trzy łańcuchy zdarzeń.
+43 testy: od jednostkowych testów Value Objectów i agregatów (bez zależności, błyskawiczne), przez test egzekwowania reguły wieku przy składaniu zamówienia (`PlaceOrderAgeRestrictionTest`), po pełny test integracyjny przepływu płatności przez kontekst Spring (`PaymentFlowIntegrationTest`), który przechodzi przez cztery konteksty i trzy łańcuchy zdarzeń.
 
 ---
 
