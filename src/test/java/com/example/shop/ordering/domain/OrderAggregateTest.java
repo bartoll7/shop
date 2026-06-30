@@ -10,10 +10,11 @@ class OrderAggregateTest {
 
     private static final ProductId WINE = ProductId.newId();
     private static final ProductId CHEESE = ProductId.newId();
+    private static final CustomerId CUSTOMER = CustomerId.newId();
 
     @Test
     void addingLinesAccumulatesTheTotalFromSnapshots() {
-        Order order = Order.place();
+        Order order = Order.place(CUSTOMER);
         order.addLine(WINE, "Wino X", Money.of("50.00", "PLN"), Quantity.of(2));
         order.addLine(CHEESE, "Ser Y", Money.of("20.00", "PLN"), Quantity.of(1));
 
@@ -24,7 +25,7 @@ class OrderAggregateTest {
 
     @Test
     void addingTheSameProductMergesQuantities() {
-        Order order = Order.place();
+        Order order = Order.place(CUSTOMER);
         order.addLine(WINE, "Wino X", Money.of("50.00", "PLN"), Quantity.of(1));
         order.addLine(WINE, "Wino X", Money.of("50.00", "PLN"), Quantity.of(2));
 
@@ -36,7 +37,7 @@ class OrderAggregateTest {
 
     @Test
     void cannotMixCurrenciesAcrossLines() {
-        Order order = Order.place();
+        Order order = Order.place(CUSTOMER);
         order.addLine(WINE, "Wino X", Money.of("50.00", "PLN"), Quantity.of(1));
         assertThatThrownBy(() ->
                                order.addLine(CHEESE, "Ser Y", Money.of("20.00", "EUR"), Quantity.of(1)))
@@ -46,7 +47,7 @@ class OrderAggregateTest {
 
     @Test
     void cannotAddLinesToANonPlacedOrder() {
-        Order order = Order.place();
+        Order order = Order.place(CUSTOMER);
         order.addLine(WINE, "Wino X", Money.of("50.00", "PLN"), Quantity.of(1));
         order.markAsPaid();
         assertThatThrownBy(() ->
@@ -56,7 +57,7 @@ class OrderAggregateTest {
 
     @Test
     void cannotPayAnOrderWithNoLines() {
-        Order order = Order.place();
+        Order order = Order.place(CUSTOMER);
         assertThatThrownBy(order::markAsPaid)
             .isInstanceOf(IllegalStateException.class)
             .hasMessageContaining("no lines");
@@ -64,7 +65,7 @@ class OrderAggregateTest {
 
     @Test
     void exposedLinesCannotBeModifiedFromOutside() {
-        Order order = Order.place();
+        Order order = Order.place(CUSTOMER);
         order.addLine(WINE, "Wino X", Money.of("50.00", "PLN"), Quantity.of(1));
         // The root must not be bypassable.
         assertThatThrownBy(() -> order.lines().add(

@@ -32,6 +32,7 @@ class OrderApplicationServiceTest {
     @Test
     void placingThenPayingAnOrderPersistsItAndPublishesOrderPaid() {
         var command = new PlaceOrderCommand(
+            UUID.randomUUID().toString(),
             30,
             com.example.shop.shared.Country.of("PL"),
             List.of(new PlaceOrderCommand.Item(

@@ -26,20 +26,22 @@ import java.util.Objects;
 public class Order {
 
     private final OrderId id;
+    private final CustomerId customerId;
     private OrderStatus status;
     private final List<OrderLine> lines;
 
     private final List<DomainEvent> domainEvents = new ArrayList<>();
 
-    private Order(OrderId id, OrderStatus status, List<OrderLine> lines) {
+    private Order(OrderId id, CustomerId customerId, OrderStatus status, List<OrderLine> lines) {
         this.id = Objects.requireNonNull(id, "id must not be null");
+        this.customerId = Objects.requireNonNull(customerId, "customer id must not be null");
         this.status = Objects.requireNonNull(status, "status must not be null");
         this.lines = new ArrayList<>(Objects.requireNonNull(lines, "lines must not be null"));
     }
 
-    public static Order place() {
-        Order order = new Order(OrderId.newId(), OrderStatus.PLACED, new ArrayList<>());
-        order.domainEvents.add(OrderPlaced.now(order.id()));
+    public static Order place(CustomerId customerId) {
+        Order order = new Order(OrderId.newId(), customerId, OrderStatus.PLACED, new ArrayList<>());
+        order.domainEvents.add(OrderPlaced.now(order.id(), customerId));
         return order;
     }
 
@@ -48,8 +50,8 @@ public class Order {
      * adapters when loading from storage — not for creating new orders (use place()).
      * Intention-revealing, so reconstruction never gets confused with creation.
      */
-    public static Order reconstitute(OrderId id, OrderStatus status, java.util.List<OrderLine> lines) {
-        return new Order(id, status, lines);
+    public static Order reconstitute(OrderId id, CustomerId customerId, OrderStatus status, java.util.List<OrderLine> lines) {
+        return new Order(id, customerId, status, lines);
     }
 
     // --- Aggregate behavior: all mutations go through the root ---
@@ -125,6 +127,10 @@ public class Order {
 
     public OrderId id() {
         return id;
+    }
+
+    public CustomerId customerId() {
+        return customerId;
     }
 
     public OrderStatus status() {

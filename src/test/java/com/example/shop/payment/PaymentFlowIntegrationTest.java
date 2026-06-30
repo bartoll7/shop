@@ -30,6 +30,7 @@ class PaymentFlowIntegrationTest {
     void payingThroughTheProviderMarksTheOrderAsPaidEndToEnd() {
         // 1. Place an order.
         OrderId orderId = orders.placeOrder(new PlaceOrderCommand(
+            UUID.randomUUID().toString(),
             30,
             com.example.shop.shared.Country.of("PL"),
             List.of(new PlaceOrderCommand.Item(

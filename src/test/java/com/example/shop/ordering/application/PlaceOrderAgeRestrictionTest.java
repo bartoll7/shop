@@ -28,6 +28,7 @@ class PlaceOrderAgeRestrictionTest {
 
     private PlaceOrderCommand command(int buyerAge) {
         return new PlaceOrderCommand(
+            UUID.randomUUID().toString(),
             buyerAge,
             Country.of("PL"),
             List.of(new PlaceOrderCommand.Item(

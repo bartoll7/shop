@@ -17,7 +17,7 @@ import java.util.List;
  * ProductId). Here they arrive in the command to keep the example focused on WHERE the
  * domain service is invoked, not on building extra contexts.
  */
-public record PlaceOrderCommand(int buyerAge, Country shippingCountry, List<Item> items) {
+public record PlaceOrderCommand(String customerId, int buyerAge, Country shippingCountry, List<Item> items) {
 
     public record Item(String productId,
                        String productName,

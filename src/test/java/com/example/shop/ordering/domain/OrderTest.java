@@ -7,11 +7,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class OrderTest {
+    private static final CustomerId CUSTOMER = CustomerId.newId();
 
     @Test
     void sameIdentityMeansEqual_evenWithDifferentState() {
         // The defining trait of an Entity: identity, not values, decides equality.
-        Order order = Order.place();
+        Order order = Order.place(CUSTOMER);
 
         // Reconstruct a different object that shares the SAME id but is PAID.
         Order samePaid = rebuild(order.id(), OrderStatus.PAID);
@@ -23,15 +24,15 @@ class OrderTest {
     @Test
     void differentIdentityMeansNotEqual_evenWithIdenticalState() {
         // Two freshly placed orders have identical state (both PLACED)...
-        Order a = Order.place();
-        Order b = Order.place();
+        Order a = Order.place(CUSTOMER);
+        Order b = Order.place(CUSTOMER);
         // ...but different identity -> different orders. Opposite of a Value Object.
         assertThat(a).isNotEqualTo(b);
     }
 
     @Test
     void aPlacedOrderCanBePaidThenShipped() {
-        Order order = Order.place();
+        Order order = Order.place(CUSTOMER);
         order.addLine(ProductId.newId(), "Wino X", Money.of("50.00", "PLN"), Quantity.of(1));
         order.markAsPaid();
         order.markAsShipped();
@@ -40,7 +41,7 @@ class OrderTest {
 
     @Test
     void cannotShipAnUnpaidOrder() {
-        Order order = Order.place();
+        Order order = Order.place(CUSTOMER);
         assertThatThrownBy(order::markAsShipped)
             .isInstanceOf(IllegalStateException.class)
             .hasMessageContaining("PAID");
@@ -48,7 +49,7 @@ class OrderTest {
 
     @Test
     void cannotCancelAShippedOrder() {
-        Order order = Order.place();
+        Order order = Order.place(CUSTOMER);
         order.addLine(ProductId.newId(), "Wino X", Money.of("50.00", "PLN"), Quantity.of(1));
         order.markAsPaid();
         order.markAsShipped();
@@ -60,6 +61,6 @@ class OrderTest {
     // reconstruction from storage. Uses reflection only because our real
     // reconstruction constructor comes later (week 7, repositories).
     private static Order rebuild(OrderId id, OrderStatus status) {
-        return Order.reconstitute(id, status, java.util.List.of());
+        return Order.reconstitute(id, CUSTOMER, status, java.util.List.of());
     }
 }

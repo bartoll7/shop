@@ -7,9 +7,9 @@ import java.time.Instant;
 /**
  * OrderPlaced — a customer has placed an order. Past tense: it already happened.
  */
-public record OrderPlaced(OrderId orderId, Instant occurredOn) implements DomainEvent {
+public record OrderPlaced(OrderId orderId, CustomerId customerId, Instant occurredOn) implements DomainEvent {
 
-    public static OrderPlaced now(OrderId orderId) {
-        return new OrderPlaced(orderId, Instant.now());
+    public static OrderPlaced now(OrderId orderId, CustomerId customerId) {
+        return new OrderPlaced(orderId, customerId, Instant.now());
     }
 }

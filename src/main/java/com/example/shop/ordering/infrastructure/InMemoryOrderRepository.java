@@ -1,9 +1,6 @@
 package com.example.shop.ordering.infrastructure;
 
-import com.example.shop.ordering.domain.Order;
-import com.example.shop.ordering.domain.OrderId;
-import com.example.shop.ordering.domain.OrderLine;
-import com.example.shop.ordering.domain.OrderRepository;
+import com.example.shop.ordering.domain.*;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -32,6 +29,7 @@ public class InMemoryOrderRepository implements OrderRepository {
         // Capture the aggregate's state as a snapshot (decoupled from the live object).
         store.put(order.id(), new StoredOrder(
             order.id(),
+            order.customerId(),
             order.status(),
             List.copyOf(order.lines())   // lines are immutable VOs; copy the list
         ));
@@ -46,6 +44,7 @@ public class InMemoryOrderRepository implements OrderRepository {
         // Reconstitute a fresh aggregate from stored state on every read.
         return Optional.of(Order.reconstitute(
             stored.id(),
+            stored.customerId(),
             stored.status(),
             stored.lines()
         ));
@@ -54,6 +53,7 @@ public class InMemoryOrderRepository implements OrderRepository {
     // The "persistence model": a plain snapshot of what we stored. In a JPA adapter
     // this would be a @Entity class; here it's just a record. The domain never sees it.
     private record StoredOrder(OrderId id,
+                               CustomerId customerId,
                                com.example.shop.ordering.domain.OrderStatus status,
                                List<OrderLine> lines) {
     }

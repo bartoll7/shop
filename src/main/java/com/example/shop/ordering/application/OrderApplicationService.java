@@ -1,17 +1,12 @@
 package com.example.shop.ordering.application;
 
 import com.example.shop.agerestriction.domain.PurchaseEligibility;
-import com.example.shop.ordering.domain.Order;
-import com.example.shop.ordering.domain.OrderId;
-import com.example.shop.ordering.domain.OrderRepository;
-import com.example.shop.ordering.domain.ProductId;
-import com.example.shop.ordering.domain.Quantity;
+import com.example.shop.ordering.domain.*;
 import com.example.shop.shared.DomainEvent;
 import com.example.shop.shared.DomainEventPublisher;
+import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 /**
  * OrderApplicationService — orchestrates order use cases.
@@ -53,7 +48,7 @@ public class OrderApplicationService {
             }
         }
 
-        Order order = Order.place();
+        Order order = Order.place(CustomerId.of(command.customerId()));
         for (PlaceOrderCommand.Item item : command.items()) {
             order.addLine(
                 ProductId.of(item.productId()),
