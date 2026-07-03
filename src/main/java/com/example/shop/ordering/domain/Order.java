@@ -87,7 +87,7 @@ public class Order {
             throw new IllegalStateException("Cannot pay an order with no lines");
         }
         this.status = OrderStatus.PAID;
-        this.domainEvents.add(OrderPaid.now(id, totalAmount()));
+        this.domainEvents.add(OrderPaid.now(id, customerId, totalAmount()));
     }
 
     public void markAsShipped() {
