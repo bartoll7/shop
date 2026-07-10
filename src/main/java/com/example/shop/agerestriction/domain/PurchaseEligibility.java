@@ -1,6 +1,7 @@
 package com.example.shop.agerestriction.domain;
 
 import com.example.shop.shared.Country;
+import com.example.shop.shared.Specification;
 
 /**
  * PurchaseEligibility — a DOMAIN SERVICE.
@@ -21,8 +22,11 @@ public class PurchaseEligibility {
      * @return true if the purchase is allowed
      */
     public boolean isAllowed(int buyerAge, AgeRestriction restriction, Country shippingCountry) {
-        return restriction.minimumAgeFor(shippingCountry)
-            .map(minimumAge -> buyerAge >= minimumAge)
-            .orElse(true); // no restriction for this jurisdiction -> allowed
+        var ageCheck = new AgeCheck(buyerAge, restriction, shippingCountry);
+        Specification<AgeCheck> unrestrictedInJurisdiction = new UnrestrictedInJurisdiction();
+        Specification<AgeCheck> meetsMinimumPurchaseAge = new MeetsMinimumPurchaseAge();
+        Specification<AgeCheck> allowed = unrestrictedInJurisdiction.or(meetsMinimumPurchaseAge);
+
+        return allowed.isSatisfiedBy(ageCheck);
     }
 }
