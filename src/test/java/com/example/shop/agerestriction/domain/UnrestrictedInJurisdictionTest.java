@@ -15,8 +15,20 @@ public class UnrestrictedInJurisdictionTest {
     ));
 
     @Test
-    void adultMayBuyRestrictedProductWhenNoRestrictionInCountry() {
+    void adultMayBuyRestrictedProductWhenAgeRestrictionIsNotPresentInCountry() {
         var ageCheck = new AgeCheck(18, alcohol, Country.of("FR"));
         assertThat(unrestrictedInJurisdiction.isSatisfiedBy(ageCheck)).isTrue();
+    }
+
+    @Test
+    void minorMayBuyRestrictedProductWhenAgeRestrictionIsNotPresentInCountry() {
+        var ageCheck = new AgeCheck(16, alcohol, Country.of("FR"));
+        assertThat(unrestrictedInJurisdiction.isSatisfiedBy(ageCheck)).isTrue();
+    }
+
+    @Test
+    void whetherThereAreRestrictionsOnAlcoholInAGivenCountry() {
+        var ageCheck = new AgeCheck(98, alcohol, Country.of("PL"));
+        assertThat(unrestrictedInJurisdiction.isSatisfiedBy(ageCheck)).isFalse();
     }
 }
