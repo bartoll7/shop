@@ -62,6 +62,11 @@ public record Money(BigDecimal amount, Currency currency) {
         return new Money(this.amount.multiply(BigDecimal.valueOf(quantity)), this.currency);
     }
 
+    /** Multiply by an arbitrary factor (e.g. a percentage expressed as a fraction). */
+    public Money multiply(BigDecimal factor) {
+        return new Money(this.amount.multiply(factor), this.currency);
+    }
+
     public boolean isGreaterThan(Money other) {
         requireSameCurrency(other);
         return this.amount.compareTo(other.amount) > 0;
