@@ -22,7 +22,7 @@ public class PurchaseEligibility {
      * @return true if the purchase is allowed
      */
     public boolean isAllowed(int buyerAge, AgeRestriction restriction, Country shippingCountry) {
-        var ageCheck = new AgeCheck(buyerAge, restriction, shippingCountry);
+        AgeCheck ageCheck = new AgeCheck(buyerAge, restriction, shippingCountry);
         Specification<AgeCheck> unrestrictedInJurisdiction = new UnrestrictedInJurisdiction();
         Specification<AgeCheck> meetsMinimumPurchaseAge = new MeetsMinimumPurchaseAge();
         Specification<AgeCheck> allowed = unrestrictedInJurisdiction.or(meetsMinimumPurchaseAge);
