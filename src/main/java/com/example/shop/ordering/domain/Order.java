@@ -164,4 +164,14 @@ public class Order {
     public String toString() {
         return "Order{id=%s, status=%s, lines=%d}".formatted(id, status, lines.size());
     }
+
+    public Money netTotal(DiscountPolicy policy) {
+        var discount = policy.discountFor(this);
+
+        if (discount.isGreaterThan(totalAmount())) {
+            throw new IllegalStateException("Discount cannot exceed total amount");
+        }
+
+        return totalAmount().subtract(discount);
+    }
 }
