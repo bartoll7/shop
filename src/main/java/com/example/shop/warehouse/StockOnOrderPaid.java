@@ -1,6 +1,6 @@
 package com.example.shop.warehouse;
 
-import com.example.shop.ordering.domain.OrderPaid;
+import com.example.shop.ordering.integration.OrderPaidIntegrationEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
@@ -16,8 +16,7 @@ import org.springframework.stereotype.Component;
 public class StockOnOrderPaid {
 
     @EventListener
-    public void on(OrderPaid event) {
-        System.out.println("[warehouse] Order " + event.orderId()
-                               + " was paid (total " + event.totalAmount() + "). Would adjust stock now.");
+    public void on(OrderPaidIntegrationEvent event) {
+        System.out.printf("[warehouse] Order %s was paid total: %s %s. Would adjust stock now.%n", event.orderId(), event.amount(), event.currency());
     }
 }
