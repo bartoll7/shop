@@ -1,6 +1,8 @@
 package com.example.shop.loyalty.domain;
 
 import com.example.shop.shared.DomainEvent;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -28,12 +30,22 @@ public class LoyaltyAccount {
         return new LoyaltyAccount(id, customerId, points);
     }
 
-    public void award(int points) {
-        if (points <= 0) {
+    public void award(BigDecimal points) {
+        int pointsToAward = toWholePoints(points);
+
+        if (pointsToAward <= 0) {
             throw new IllegalArgumentException("Points to award must be positive");
         }
-        this.points += points;
-        domainEvents.add(LoyaltyPointsAwarded.now(this.id, this.customerId, points));
+        this.points += pointsToAward;
+        domainEvents.add(LoyaltyPointsAwarded.now(this.id, this.customerId, pointsToAward));
+    }
+
+    /**
+     * Converts a monetary amount into whole loyalty points, rounding the fractional
+     * part (tenths/hundredths) to the nearest integer — e.g. 99.49 -> 99, 99.50 -> 100.
+     */
+    private static int toWholePoints(BigDecimal amount) {
+        return amount.setScale(0, RoundingMode.HALF_UP).intValueExact();
     }
 
     @Override

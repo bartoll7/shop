@@ -29,7 +29,7 @@ public class AwardPointsApplicationService {
         LoyaltyAccount account = loyaltyAccounts.findByCustomer(customerId)
             .orElseGet(() -> LoyaltyAccount.create(customerId));
 
-        account.award(amount.intValue());
+        account.award(amount);
 
         loyaltyAccounts.save(account);
         publishEvents(account.pullDomainEvents());
