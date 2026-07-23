@@ -76,6 +76,10 @@ public record Money(BigDecimal amount, Currency currency) {
         return this.amount.signum() < 0;
     }
 
+    public boolean isZero() {
+        return this.amount.signum() == 0;
+    }
+
     // --- Invariant enforcement ---
 
     private void requireSameCurrency(Money other) {
