@@ -2,9 +2,7 @@ package com.example.shop.ordering.application;
 
 import com.example.shop.agerestriction.domain.PurchaseEligibility;
 import com.example.shop.ordering.domain.*;
-import com.example.shop.shared.DomainEvent;
 import com.example.shop.shared.DomainEventPublisher;
-import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -52,13 +50,7 @@ public class PlaceOrderCommandHandler {
             );
         }
         orders.save(order);
-        publishEvents(order.pullDomainEvents());
+        events.publishAll(order.pullDomainEvents());
         return order.id();
-    }
-
-    private void publishEvents(List<DomainEvent> domainEvents) {
-        for (DomainEvent event : domainEvents) {
-            events.publish(event);
-        }
     }
 }

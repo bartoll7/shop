@@ -3,9 +3,7 @@ package com.example.shop.ordering.application;
 import com.example.shop.ordering.domain.Order;
 import com.example.shop.ordering.domain.OrderId;
 import com.example.shop.ordering.domain.OrderRepository;
-import com.example.shop.shared.DomainEvent;
 import com.example.shop.shared.DomainEventPublisher;
-import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,12 +30,6 @@ public class PayOrderCommandHandler {
             .orElseThrow(() -> new IllegalArgumentException("Unknown order: " + orderId));
         order.markAsPaid();
         orders.save(order);
-        publishEvents(order.pullDomainEvents());
-    }
-
-    private void publishEvents(List<DomainEvent> domainEvents) {
-        for (DomainEvent event : domainEvents) {
-            events.publish(event);
-        }
+        events.publishAll(order.pullDomainEvents());
     }
 }

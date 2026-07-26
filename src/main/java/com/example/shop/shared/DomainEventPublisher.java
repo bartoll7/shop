@@ -1,5 +1,7 @@
 package com.example.shop.shared;
 
+import java.util.List;
+
 /**
  * DomainEventPublisher — an output PORT for publishing domain events.
  *
@@ -9,4 +11,10 @@ package com.example.shop.shared;
  */
 public interface DomainEventPublisher {
     void publish(DomainEvent event);
+
+    default void publishAll(List<DomainEvent> domainEvents) {
+        for (DomainEvent event : domainEvents) {
+            publish(event);
+        }
+    }
 }
