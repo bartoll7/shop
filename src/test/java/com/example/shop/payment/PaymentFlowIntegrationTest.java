@@ -1,35 +1,34 @@
 package com.example.shop.payment;
 
-import com.example.shop.ordering.application.OrderApplicationService;
 import com.example.shop.ordering.application.PlaceOrderCommand;
+import com.example.shop.ordering.application.PlaceOrderCommandHandler;
 import com.example.shop.ordering.domain.Order;
 import com.example.shop.ordering.domain.OrderId;
 import com.example.shop.ordering.domain.OrderRepository;
 import com.example.shop.ordering.domain.OrderStatus;
 import com.example.shop.payment.application.PaymentApplicationService;
 import com.example.shop.shared.Money;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.awaitility.Awaitility;
-
 import java.time.Duration;
 import java.util.List;
 import java.util.UUID;
+import org.awaitility.Awaitility;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
 class PaymentFlowIntegrationTest {
 
-    @Autowired OrderApplicationService orders;
+    @Autowired PlaceOrderCommandHandler placeOrderCommandHandler;
     @Autowired PaymentApplicationService payments;
     @Autowired OrderRepository orderRepository;
 
     @Test
     void payingThroughTheProviderMarksTheOrderAsPaidEndToEnd() {
         // 1. Place an order.
-        OrderId orderId = orders.placeOrder(new PlaceOrderCommand(
+        OrderId orderId = placeOrderCommandHandler.handle(new PlaceOrderCommand(
             UUID.randomUUID().toString(),
             30,
             com.example.shop.shared.Country.of("PL"),

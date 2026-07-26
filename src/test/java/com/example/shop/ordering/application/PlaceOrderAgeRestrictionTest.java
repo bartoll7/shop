@@ -18,7 +18,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @SpringBootTest
 class PlaceOrderAgeRestrictionTest {
 
-    @Autowired OrderApplicationService service;
+    @Autowired PlaceOrderCommandHandler placeOrderCommandHandler;
     @Autowired OrderRepository orders;
 
     private final AgeRestriction alcohol = new AgeRestriction(Map.of(
@@ -39,13 +39,13 @@ class PlaceOrderAgeRestrictionTest {
 
     @Test
     void adultCanPlaceAnOrderWithRestrictedProduct() {
-        var id = service.placeOrder(command(18));
+        var id = placeOrderCommandHandler.handle(command(18));
         assertThat(orders.findById(id)).isPresent();
     }
 
     @Test
     void underageBuyerIsRejectedAndNothingIsPersisted() {
-        assertThatThrownBy(() -> service.placeOrder(command(17)))
+        assertThatThrownBy(() -> placeOrderCommandHandler.handle(command(17)))
             .isInstanceOf(AgeRestrictionViolation.class)
             .hasMessageContaining("Wino X");
     }
