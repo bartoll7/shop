@@ -14,14 +14,14 @@ import org.springframework.stereotype.Component;
 @Component
 public class MarkOrderPaidOnPaymentReceived {
 
-    private final OrderApplicationService orderService;
+    private final PayOrderCommandHandler payOrderCommandHandler;
 
-    public MarkOrderPaidOnPaymentReceived(OrderApplicationService orderService) {
-        this.orderService = orderService;
+    public MarkOrderPaidOnPaymentReceived(PayOrderCommandHandler payOrderCommandHandler) {
+        this.payOrderCommandHandler = payOrderCommandHandler;
     }
 
     @EventListener
     public void on(PaymentReceived event) {
-        orderService.payOrder(event.orderId());
+        payOrderCommandHandler.handle(new PayOrderCommand(event.orderId().toString()));
     }
 }

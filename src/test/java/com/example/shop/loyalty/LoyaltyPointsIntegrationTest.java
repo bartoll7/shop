@@ -1,11 +1,13 @@
 package com.example.shop.loyalty;
 
 import com.example.shop.agerestriction.domain.AgeRestriction;
+import com.example.shop.loyalty.domain.CustomerId;
 import com.example.shop.loyalty.domain.LoyaltyAccount;
 import com.example.shop.loyalty.domain.LoyaltyAccountRepository;
-import com.example.shop.ordering.application.OrderApplicationService;
+import com.example.shop.ordering.application.PayOrderCommand;
+import com.example.shop.ordering.application.PayOrderCommandHandler;
 import com.example.shop.ordering.application.PlaceOrderCommand;
-import com.example.shop.loyalty.domain.CustomerId;
+import com.example.shop.ordering.application.PlaceOrderCommandHandler;
 import com.example.shop.ordering.domain.OrderId;
 import com.example.shop.shared.Country;
 import com.example.shop.shared.Money;
@@ -33,7 +35,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest
 class LoyaltyPointsIntegrationTest {
 
-    @Autowired OrderApplicationService orders;
+    @Autowired PlaceOrderCommandHandler placeOrderCommandHandler;
+    @Autowired PayOrderCommandHandler payOrderCommandHandler;
     @Autowired LoyaltyAccountRepository loyaltyAccounts;
 
     @Test
@@ -41,7 +44,7 @@ class LoyaltyPointsIntegrationTest {
         CustomerId customer = CustomerId.newId();
 
         // Order total = 2 x 50.00 PLN = 100.00 PLN
-        OrderId orderId = orders.placeOrder(new PlaceOrderCommand(
+        OrderId orderId = placeOrderCommandHandler.handle(new PlaceOrderCommand(
             customer.value().toString(),
             30,
             Country.of("PL"),
@@ -54,7 +57,7 @@ class LoyaltyPointsIntegrationTest {
         // Before payment there are no points for this customer.
         assertThat(loyaltyAccounts.findByCustomer(customer)).isEmpty();
 
-        orders.payOrder(orderId);
+        payOrderCommandHandler.handle(new PayOrderCommand(orderId.toString()));
 
         // After the order-payment transaction commits, the loyalty context reacts
         // (eventual consistency): 1 point per 1 PLN of the order total -> 100 points.

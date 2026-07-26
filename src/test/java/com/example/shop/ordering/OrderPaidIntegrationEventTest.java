@@ -1,8 +1,10 @@
 package com.example.shop.ordering;
 
 import com.example.shop.agerestriction.domain.AgeRestriction;
-import com.example.shop.ordering.application.OrderApplicationService;
+import com.example.shop.ordering.application.PayOrderCommand;
+import com.example.shop.ordering.application.PayOrderCommandHandler;
 import com.example.shop.ordering.application.PlaceOrderCommand;
+import com.example.shop.ordering.application.PlaceOrderCommandHandler;
 import com.example.shop.ordering.domain.OrderId;
 import com.example.shop.ordering.integration.OrderPaidIntegrationEvent;
 import com.example.shop.shared.Country;
@@ -40,7 +42,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Import(OrderPaidIntegrationEventTest.CaptureIntegrationEvents.class)
 class OrderPaidIntegrationEventTest {
 
-    @Autowired OrderApplicationService orders;
+    @Autowired PlaceOrderCommandHandler placeOrderCommandHandler;
+    @Autowired PayOrderCommandHandler payOrderCommandHandler;
     @Autowired CaptureIntegrationEvents captured;
 
     @Test
@@ -48,7 +51,7 @@ class OrderPaidIntegrationEventTest {
         String customerId = UUID.randomUUID().toString();
 
         // Order total = 2 x 50.00 PLN = 100.00 PLN
-        OrderId orderId = orders.placeOrder(new PlaceOrderCommand(
+        OrderId orderId = placeOrderCommandHandler.handle(new PlaceOrderCommand(
             customerId,
             30,
             Country.of("PL"),
@@ -58,7 +61,7 @@ class OrderPaidIntegrationEventTest {
                 AgeRestriction.none()))
         ));
 
-        orders.payOrder(orderId);
+        payOrderCommandHandler.handle(new PayOrderCommand(orderId.toString()));
 
         // After the payment transaction COMMITS, ordering announces the fact to the world.
         Awaitility.await().atMost(Duration.ofSeconds(2)).untilAsserted(() -> {

@@ -9,32 +9,26 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * OrderApplicationService — orchestrates order use cases.
- *
- * <p>It coordinates; it does NOT contain business rules. For placeOrder it now also
- * enforces the age-restriction rule by invoking the PurchaseEligibility domain service
+ * PlaceOrderCommandHandler — orchestrates the place order use case.
+ * For handle it now also enforces the age-restriction rule by invoking the PurchaseEligibility domain service
  * (Customer-Supplier relationship: ordering consumes the age-restriction context).
- * The check happens BEFORE the aggregate is built and saved, so a disallowed order is
- * rejected without any persistence or events.
+ * <p>It coordinates; it does NOT contain business rules.
+ * The aggregate is created, its state is changed, and the new state is persisted. Any domain events are published.
  */
 @Service
-public class OrderApplicationService {
-
+public class PlaceOrderCommandHandler {
     private final OrderRepository orders;
     private final DomainEventPublisher events;
     private final PurchaseEligibility purchaseEligibility;
 
-    public OrderApplicationService(OrderRepository orders,
-        DomainEventPublisher events,
-        PurchaseEligibility purchaseEligibility) {
+    public PlaceOrderCommandHandler(OrderRepository orders, DomainEventPublisher events, PurchaseEligibility purchaseEligibility) {
         this.orders = orders;
         this.events = events;
         this.purchaseEligibility = purchaseEligibility;
     }
 
     @Transactional
-    public OrderId placeOrder(PlaceOrderCommand command) {
-        // Enforce age restriction across all items before doing anything else.
+    public OrderId handle(PlaceOrderCommand command) {
         for (PlaceOrderCommand.Item item : command.items()) {
             boolean allowed = purchaseEligibility.isAllowed(
                 command.buyerAge(),
@@ -60,15 +54,6 @@ public class OrderApplicationService {
         orders.save(order);
         publishEvents(order.pullDomainEvents());
         return order.id();
-    }
-
-    @Transactional
-    public void payOrder(OrderId orderId) {
-        Order order = orders.findById(orderId)
-            .orElseThrow(() -> new IllegalArgumentException("Unknown order: " + orderId));
-        order.markAsPaid();
-        orders.save(order);
-        publishEvents(order.pullDomainEvents());
     }
 
     private void publishEvents(List<DomainEvent> domainEvents) {
