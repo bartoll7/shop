@@ -8,8 +8,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * PlaceOrderCommandHandler — orchestrates the place order use case.
- * For handle it now also enforces the age-restriction rule by invoking the PurchaseEligibility domain service
- * (Customer-Supplier relationship: ordering consumes the age-restriction context).
  * <p>It coordinates; it does NOT contain business rules.
  * The aggregate is created, its state is changed, and the new state is persisted. Any domain events are published.
  */

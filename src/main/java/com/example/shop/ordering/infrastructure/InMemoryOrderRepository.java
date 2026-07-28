@@ -50,19 +50,6 @@ public class InMemoryOrderRepository implements OrderRepository {
         ));
     }
 
-    @Override
-    public List<Order> findByCustomerId(CustomerId customerId) {
-        return store.values().stream()
-            .filter(stored -> stored.customerId().equals(customerId))
-            .map(stored -> Order.reconstitute(
-                stored.id(),
-                stored.customerId(),
-                stored.status(),
-                stored.lines()
-            ))
-            .toList();
-    }
-
     // The "persistence model": a plain snapshot of what we stored. In a JPA adapter
     // this would be a @Entity class; here it's just a record. The domain never sees it.
     private record StoredOrder(OrderId id,

@@ -1,6 +1,5 @@
 package com.example.shop.ordering.domain;
 
-import java.util.List;
 import java.util.Optional;
 
 /**
@@ -21,7 +20,4 @@ public interface OrderRepository {
 
     /** Retrieve a whole aggregate by its identity, if present. */
     Optional<Order> findById(OrderId id);
-
-    /** Retrieve all orders for a given customer. */
-    List<Order> findByCustomerId(CustomerId customerId);
 }
