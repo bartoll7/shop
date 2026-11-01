@@ -3,6 +3,8 @@ package com.example.shop.ordering.application;
 import com.example.shop.agerestriction.domain.PurchaseEligibility;
 import com.example.shop.ordering.domain.*;
 import com.example.shop.shared.DomainEventPublisher;
+import java.util.ArrayList;
+import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,15 +40,17 @@ public class PlaceOrderCommandHandler {
             }
         }
 
-        Order order = Order.place(CustomerId.of(command.customerId()));
+        List<OrderLine> orderLines = new ArrayList<>();
+
         for (PlaceOrderCommand.Item item : command.items()) {
-            order.addLine(
+            orderLines.add(new OrderLine(
                 ProductId.of(item.productId()),
                 item.productName(),
                 item.unitPrice(),
                 Quantity.of(item.quantity())
-            );
+            ));
         }
+        Order order = Order.place(CustomerId.of(command.customerId()), orderLines);
         orders.save(order);
         events.publishAll(order.pullDomainEvents());
         return order.id();

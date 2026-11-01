@@ -39,9 +39,14 @@ public class Order {
         this.lines = new ArrayList<>(Objects.requireNonNull(lines, "lines must not be null"));
     }
 
-    public static Order place(CustomerId customerId) {
+    public static Order place(CustomerId customerId, List<OrderLine> lines) {
+        if (lines.isEmpty()) {
+            throw new IllegalStateException("Cannot create order without lines");
+        }
+
         Order order = new Order(OrderId.newId(), customerId, OrderStatus.PLACED, new ArrayList<>());
-        order.domainEvents.add(OrderPlaced.now(order.id(), customerId));
+        lines.forEach(l -> order.addLine(l.productId(), l.productName(), l.unitPrice(), l.quantity()));
+        order.domainEvents.add(OrderPlaced.now(order.id(), customerId, order.lines.size(), order.totalAmount()));
         return order;
     }
 
@@ -58,12 +63,9 @@ public class Order {
 
     /**
      * Add a product to the order. If the same ProductId is already present, the
-     * quantities are merged into the existing line. Only allowed while PLACED.
+     * quantities are merged into the existing line.
      */
-    public void addLine(ProductId productId, String productName, Money unitPrice, Quantity quantity) {
-        if (status != OrderStatus.PLACED) {
-            throw new IllegalStateException("Cannot modify lines of a " + status + " order");
-        }
+    private void addLine(ProductId productId, String productName, Money unitPrice, Quantity quantity) {
         // Currency consistency: a new line must match lines already in the order.
         if (!lines.isEmpty() && !lines.getFirst().unitPrice().currency().equals(unitPrice.currency())) {
             throw new IllegalArgumentException("All order lines must share the same currency");

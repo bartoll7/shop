@@ -38,9 +38,8 @@ class PayOrderCommandHandlerTest {
      */
     @Test
     void placingThenPayingAnOrderPersistsItAndPublishesOrderPaid() {
-        Order order = Order.place(CustomerId.newId());
+        Order order = Order.place(CustomerId.newId(), List.of(new OrderLine(ProductId.newId(), "Wino X", Money.of("50.00", "PLN"), Quantity.of(2))));
         OrderId id = order.id();
-        order.addLine(ProductId.newId(), "Wino X", Money.of("50.00", "PLN"), Quantity.of(2));
 
         orders.save(order);
         payOrderCommandHandler.handle(new PayOrderCommand(order.id().toString()));

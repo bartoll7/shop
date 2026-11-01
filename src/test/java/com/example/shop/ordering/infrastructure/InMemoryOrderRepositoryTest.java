@@ -4,6 +4,7 @@ import com.example.shop.ordering.domain.*;
 import com.example.shop.shared.Money;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -11,12 +12,16 @@ import static org.assertj.core.api.Assertions.assertThat;
 class InMemoryOrderRepositoryTest {
     private static final CustomerId CUSTOMER = CustomerId.newId();
 
+    private static Order placeOrder(int quantity) {
+        return Order.place(CUSTOMER, List.of(
+            new OrderLine(ProductId.newId(), "Wino X", Money.of("50.00", "PLN"), Quantity.of(quantity))));
+    }
+
     private final OrderRepository orders = new InMemoryOrderRepository();
 
     @Test
     void savesAndRetrievesAWholeAggregateIncludingLines() {
-        Order order = Order.place(CUSTOMER);
-        order.addLine(ProductId.newId(), "Wino X", Money.of("50.00", "PLN"), Quantity.of(2));
+        Order order = placeOrder(2);
         orders.save(order);
 
         Optional<Order> loaded = orders.findById(order.id());
@@ -36,8 +41,7 @@ class InMemoryOrderRepositoryTest {
 
     @Test
     void savingAgainReplacesTheStoredAggregate() {
-        Order order = Order.place(CUSTOMER);
-        order.addLine(ProductId.newId(), "Wino X", Money.of("50.00", "PLN"), Quantity.of(1));
+        Order order = placeOrder(1);
         orders.save(order);
 
         order.markAsPaid();   // state change
@@ -51,8 +55,7 @@ class InMemoryOrderRepositoryTest {
 
     @Test
     void retrievedAggregateIsIndependentOfTheStore() {
-        Order order = Order.place(CUSTOMER);
-        order.addLine(ProductId.newId(), "Wino X", Money.of("50.00", "PLN"), Quantity.of(1));
+        Order order = placeOrder(1);
         orders.save(order);
 
         // Mutating the originally-saved object must NOT change what's stored,

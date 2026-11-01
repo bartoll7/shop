@@ -3,6 +3,7 @@ package com.example.shop.ordering.infrastructure;
 import com.example.shop.ordering.domain.CustomerId;
 import com.example.shop.ordering.domain.OrderId;
 import com.example.shop.ordering.query.OrderSummary;
+import com.example.shop.ordering.query.OrderSummaryUpsert;
 import com.example.shop.ordering.query.OrderSummaryQuery;
 import java.util.Comparator;
 import java.util.List;
@@ -16,7 +17,7 @@ import org.springframework.stereotype.Repository;
  * This class is a simple repository that stores OrderSummary objects in a concurrent hash map.
  */
 @Repository
-public class InMemoryOrderSummaryStore implements OrderSummaryQuery {
+public class InMemoryOrderSummaryStore implements OrderSummaryQuery, OrderSummaryUpsert {
     private final Map<OrderId, OrderSummary> store = new ConcurrentHashMap<>();
 
     @Override

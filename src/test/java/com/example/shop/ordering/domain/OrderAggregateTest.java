@@ -3,6 +3,8 @@ package com.example.shop.ordering.domain;
 import com.example.shop.shared.Money;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -12,11 +14,15 @@ class OrderAggregateTest {
     private static final ProductId CHEESE = ProductId.newId();
     private static final CustomerId CUSTOMER = CustomerId.newId();
 
+    private static OrderLine line(ProductId product, String name, String price, String currency, int qty) {
+        return new OrderLine(product, name, Money.of(price, currency), Quantity.of(qty));
+    }
+
     @Test
-    void addingLinesAccumulatesTheTotalFromSnapshots() {
-        Order order = Order.place(CUSTOMER);
-        order.addLine(WINE, "Wino X", Money.of("50.00", "PLN"), Quantity.of(2));
-        order.addLine(CHEESE, "Ser Y", Money.of("20.00", "PLN"), Quantity.of(1));
+    void placingAccumulatesTheTotalFromSnapshots() {
+        Order order = Order.place(CUSTOMER, List.of(
+            line(WINE, "Wino X", "50.00", "PLN", 2),
+            line(CHEESE, "Ser Y", "20.00", "PLN", 1)));
 
         // 2 × 50 + 1 × 20 = 120
         assertThat(order.totalAmount()).isEqualTo(Money.of("120.00", "PLN"));
@@ -24,10 +30,10 @@ class OrderAggregateTest {
     }
 
     @Test
-    void addingTheSameProductMergesQuantities() {
-        Order order = Order.place(CUSTOMER);
-        order.addLine(WINE, "Wino X", Money.of("50.00", "PLN"), Quantity.of(1));
-        order.addLine(WINE, "Wino X", Money.of("50.00", "PLN"), Quantity.of(2));
+    void placingTheSameProductTwiceMergesQuantities() {
+        Order order = Order.place(CUSTOMER, List.of(
+            line(WINE, "Wino X", "50.00", "PLN", 1),
+            line(WINE, "Wino X", "50.00", "PLN", 2)));
 
         // Merged into one line of quantity 3, not two separate lines.
         assertThat(order.lines()).hasSize(1);
@@ -37,27 +43,17 @@ class OrderAggregateTest {
 
     @Test
     void cannotMixCurrenciesAcrossLines() {
-        Order order = Order.place(CUSTOMER);
-        order.addLine(WINE, "Wino X", Money.of("50.00", "PLN"), Quantity.of(1));
-        assertThatThrownBy(() ->
-                               order.addLine(CHEESE, "Ser Y", Money.of("20.00", "EUR"), Quantity.of(1)))
+        assertThatThrownBy(() -> Order.place(CUSTOMER, List.of(
+            line(WINE, "Wino X", "50.00", "PLN", 1),
+            line(CHEESE, "Ser Y", "20.00", "EUR", 1))))
             .isInstanceOf(IllegalArgumentException.class)
             .hasMessageContaining("currency");
     }
 
     @Test
-    void cannotAddLinesToANonPlacedOrder() {
-        Order order = Order.place(CUSTOMER);
-        order.addLine(WINE, "Wino X", Money.of("50.00", "PLN"), Quantity.of(1));
-        order.markAsPaid();
-        assertThatThrownBy(() ->
-                               order.addLine(CHEESE, "Ser Y", Money.of("20.00", "PLN"), Quantity.of(1)))
-            .isInstanceOf(IllegalStateException.class);
-    }
-
-    @Test
     void cannotPayAnOrderWithNoLines() {
-        Order order = Order.place(CUSTOMER);
+        // place() can no longer produce an empty order, so reconstitute one.
+        Order order = Order.reconstitute(OrderId.newId(), CUSTOMER, OrderStatus.PLACED, List.of());
         assertThatThrownBy(order::markAsPaid)
             .isInstanceOf(IllegalStateException.class)
             .hasMessageContaining("no lines");
@@ -65,11 +61,9 @@ class OrderAggregateTest {
 
     @Test
     void exposedLinesCannotBeModifiedFromOutside() {
-        Order order = Order.place(CUSTOMER);
-        order.addLine(WINE, "Wino X", Money.of("50.00", "PLN"), Quantity.of(1));
+        Order order = Order.place(CUSTOMER, List.of(line(WINE, "Wino X", "50.00", "PLN", 1)));
         // The root must not be bypassable.
-        assertThatThrownBy(() -> order.lines().add(
-            new OrderLine(CHEESE, "Ser Y", Money.of("20.00", "PLN"), Quantity.of(1))))
+        assertThatThrownBy(() -> order.lines().add(line(CHEESE, "Ser Y", "20.00", "PLN", 1)))
             .isInstanceOf(UnsupportedOperationException.class);
     }
 }

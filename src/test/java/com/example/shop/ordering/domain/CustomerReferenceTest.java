@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.example.shop.shared.DomainEvent;
+import com.example.shop.shared.Money;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
@@ -19,18 +20,22 @@ import org.junit.jupiter.api.Test;
  */
 class CustomerReferenceTest {
 
+    private static List<OrderLine> oneLine() {
+        return List.of(new OrderLine(ProductId.newId(), "Wino X", Money.of("50.00", "PLN"), Quantity.of(1)));
+    }
+
     @Test
     void placed_order_remembers_which_customer_it_belongs_to() {
         CustomerId customer = CustomerId.newId();
 
-        Order order = Order.place(customer);
+        Order order = Order.place(customer, oneLine());
 
         assertThat(order.customerId()).isEqualTo(customer);
     }
 
     @Test
     void an_order_cannot_be_placed_without_a_customer() {
-        assertThatThrownBy(() -> Order.place(null))
+        assertThatThrownBy(() -> Order.place(null, oneLine()))
             .isInstanceOf(NullPointerException.class);
     }
 
@@ -38,7 +43,7 @@ class CustomerReferenceTest {
     void the_OrderPlaced_event_carries_the_customer_id_so_other_contexts_can_react() {
         CustomerId customer = CustomerId.newId();
 
-        Order order = Order.place(customer);
+        Order order = Order.place(customer, oneLine());
 
         List<DomainEvent> events = order.pullDomainEvents();
         assertThat(events).hasSize(1);
