@@ -11,9 +11,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 class OrderEventsTest {
     private static final CustomerId CUSTOMER = CustomerId.newId();
 
+    private static Order placedOrder() {
+        return Order.place(CUSTOMER, List.of(
+            new OrderLine(ProductId.newId(), "Wino X", Money.of("50.00", "PLN"), Quantity.of(2))));
+    }
+
     @Test
     void placingAnOrderRecordsOrderPlaced() {
-        Order order = Order.place(CUSTOMER);
+        Order order = placedOrder();
         assertThat(order.pullDomainEvents())
             .singleElement()
             .isInstanceOf(OrderPlaced.class);
@@ -21,8 +26,7 @@ class OrderEventsTest {
 
     @Test
     void payingAnOrderRecordsOrderPaidWithTheTotal() {
-        Order order = Order.place(CUSTOMER);
-        order.addLine(ProductId.newId(), "Wino X", Money.of("50.00", "PLN"), Quantity.of(2));
+        Order order = placedOrder();
         order.pullDomainEvents(); // discard the OrderPlaced event for this test
 
         order.markAsPaid();
@@ -35,8 +39,19 @@ class OrderEventsTest {
     }
 
     @Test
+    void placingAnOrderWithTwoOrderLinesEmitsSingleOrderPlacedEvent() {
+        Order order = Order.place(CUSTOMER, List.of(
+            new OrderLine(ProductId.newId(), "Wino X", Money.of("50.00", "PLN"), Quantity.of(2)),
+            new OrderLine(ProductId.newId(), "Wino Y", Money.of("30.00", "PLN"), Quantity.of(1))));
+
+        List<DomainEvent> events = order.pullDomainEvents();
+        assertThat(events).singleElement().isInstanceOf(OrderPlaced.class);
+        assertThat(events.size()).isEqualTo(1);
+    }
+
+    @Test
     void pullingEventsClearsThem() {
-        Order order = Order.place(CUSTOMER);
+        Order order = placedOrder();
         order.pullDomainEvents();                       // first pull returns OrderPlaced
         assertThat(order.pullDomainEvents()).isEmpty(); // second pull is empty
     }

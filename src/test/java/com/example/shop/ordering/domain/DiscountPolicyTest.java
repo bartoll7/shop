@@ -2,6 +2,7 @@ package com.example.shop.ordering.domain;
 
 import com.example.shop.shared.Money;
 import java.math.BigDecimal;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -11,9 +12,8 @@ class DiscountPolicyTest {
     private static final CustomerId CUSTOMER = CustomerId.newId();
 
     private static Order orderWorth(String amount, String currency) {
-        Order order = Order.place(CUSTOMER);
-        order.addLine(ProductId.newId(), "Wino X", Money.of(amount, currency), Quantity.of(1));
-        return order;
+        return Order.place(CUSTOMER, List.of(
+            new OrderLine(ProductId.newId(), "Wino X", Money.of(amount, currency), Quantity.of(1))));
     }
 
     @Test
